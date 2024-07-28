@@ -18,10 +18,10 @@ const HomePage = () => {
   const [optionsVisible, setOptionsVisible] = useState(null);
   const inputRef = useRef(null);
   const { createFolder } = useCreateFolder();
-  const { getFileFolders, fileFolders = [], renameItem, deleteItem } = useGetFileFolders();
+  const { getFileFolders, fileFolders, renameItem, deleteItem } = useGetFileFolders();
   const { isUploadAllowed, uploadFile } = useUploadFile();
   const [folderStructure, setFoldersStructure] = useState([{ _id: null, name: "Home" }]);
-  const { results = [] } = useSelector((state) => state.search);
+  const { results } = useSelector((state) => state.search);
 
   const parentFolder = folderStructure[folderStructure.length - 1];
 
@@ -39,17 +39,13 @@ const HomePage = () => {
 
   const handleCreateFolder = async () => {
     if (newFolder.length > 0) {
-      try {
-        await createFolder({
-          name: newFolder,
-          parentId: parentFolder._id
-        });
-        getFileFolders(parentFolder._id);
-        setShowCreateFolder(false);
-        setNewFolder("");
-      } catch (error) {
-        console.error("Error creating folder:", error);
-      }
+      await createFolder({
+        name: newFolder,
+        parentId: parentFolder._id
+      });
+      getFileFolders(parentFolder._id);
+      setShowCreateFolder(false);
+      setNewFolder("");
     }
   };
 
@@ -62,12 +58,8 @@ const HomePage = () => {
   const handleFileUpload = async (e) => {
     if (isUploadAllowed) {
       const file = e.target.files;
-      try {
-        await uploadFile({ file: file[0], parentId: parentFolder._id });
-        getFileFolders(parentFolder._id);
-      } catch (error) {
-        console.error("Error uploading file:", error);
-      }
+      await uploadFile({ file: file[0], parentId: parentFolder._id });
+      getFileFolders(parentFolder._id);
     } else {
       alert("Upload is already in progress. Please wait...");
     }
@@ -87,32 +79,23 @@ const HomePage = () => {
 
   const handleRenameSubmit = async () => {
     if (newName.length > 0) {
-      try {
-        await renameItem(editingId, newName);
-        getFileFolders(parentFolder._id);
-        setEditingId(null);
-        setNewName("");
-      } catch (error) {
-        console.error("Error renaming item:", error);
-      }
+      await renameItem(editingId, newName);
+      getFileFolders(parentFolder._id);
+      setEditingId(null);
+      setNewName("");
     }
   };
 
   const handleDelete = async (id) => {
-    try {
-      await deleteItem(id);
-      getFileFolders(parentFolder._id);
-      setOptionsVisible(null);
-    } catch (error) {
-      console.error("Error deleting item:", error);
-    }
+    await deleteItem(id);
+    getFileFolders(parentFolder._id);
+    setOptionsVisible(null);
   };
 
   useEffect(() => {
     getFileFolders(parentFolder._id);
-  }, [parentFolder, getFileFolders]);
+  }, [parentFolder]);
 
-  // Default to empty array if results or fileFolders are undefined
   const displayedItems = results.length > 0 ? results : fileFolders;
 
   return (
@@ -136,17 +119,17 @@ const HomePage = () => {
 
         <ul className="folder-list">
           {folderStructure.map((elem, idx) => (
-            <React.Fragment key={idx}>
-              <li onClick={() => handleBackClick(idx)}>
-                {elem.name}
-              </li>
-              <p>/</p>
-            </React.Fragment>
+            <>
+            <li key={idx} onClick={() => handleBackClick(idx)}>
+            {elem.name} 
+            </li>
+            <p>/</p>
+            </>
           ))}
         </ul>
 
         <div className="get-file-folders">
-          {Array.isArray(displayedItems) && displayedItems.map((elem) => (
+          {displayedItems.map((elem) => (
             <div
               key={elem._id}
               className={`file-folder ${editingId === elem._id ? "expanded" : ""}`}
@@ -161,9 +144,6 @@ const HomePage = () => {
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
                       onBlur={handleRenameSubmit}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') handleRenameSubmit();
-                      }}
                       autoFocus
                     />
                     <button onClick={handleRenameSubmit}>Submit</button>
